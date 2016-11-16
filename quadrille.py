@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # Quadrille - a dance node for ROS via the Twist command
 #
+# Usage: when a roscore (kinetic) is succesfully running:
+# rosrun quadrille quadrille.py
+#
 # Jay Salmonson
 # 11/15/2016
 
