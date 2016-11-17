@@ -13,7 +13,7 @@ import rospy
 from geometry_msgs.msg import Twist
 
 from timeit import default_timer as timer
-from math import cos, pi
+from math import cos, sin, pi
 import sys
 
 
@@ -30,7 +30,7 @@ class quadrille(object):
     def takeStep(self, dist, n_beats, direction, theta_max):
         t_dur      = n_beats*60./self.bpm
         vel_ave    = dist/t_dur # m/s
-        shimmy_max = theta_max * pi / t_dur # max angular twist speed
+        shimmy_max = 0.02*theta_max * pi / t_dur # max angular twist speed
         rate = rospy.Rate(10)  # Hz
         t = t0 = timer()
         # publish twist 0.0 here
@@ -40,13 +40,15 @@ class quadrille(object):
             vel = direction * vel_ave * (1. - cos(2.*pi*(t-t0)/t_dur))
             shimmy = shimmy_max * sin(2.*pi*(t-t0)/t_dur)
             twist = Twist()
-            twist.linear.x = vel
+            twist.linear.x  = vel
+            twist.angular.z = shimmy
             self.pub.publish(twist)
-            print (t-t0), vel, t_dur
+            #print (t-t0), vel, shimmy, t_dur
         twist = Twist()
-        twist.linear.x = 0.
-        twist.angular.z = shimmy
+        twist.linear.x  = 0.
+        twist.angular.z = 0.
         self.pub.publish(twist)
+        print "t0= ",t0,"t= ", t,"n_beats=",n_beats
 
     def stepForward(self, dist = 0.5, n_beats = 2):
         self.takeStep(dist, n_beats, 1, 0)
@@ -55,11 +57,26 @@ class quadrille(object):
 
 if __name__=="__main__":
 
-    dance = quadrille()
+    dance = quadrille(80)
     try:
-        dance.stepForward()
-        dance.stepBackward()
-        dance.takeStep(0.5, 2, 1, pi/4.)
-        dance.takeStep(0.5, 2, -1, pi/4.)
+        #dance.stepForward()
+        #dance.stepBackward()
+        dance.takeStep(0.5, 3, 1, pi/4.)
+        dance.takeStep(0.5, 3, -1, pi/4.)
+
+        #spin back and forth:
+        dance.takeStep(0., 3, 1, 2.*pi)
+
+        dance.takeStep(0.5, 3, 1, -pi/4.)
+        dance.takeStep(0.5, 3, -1, -pi/4.)
+
+        dance.takeStep(0.2, 1, 1, -pi/4.)
+        dance.takeStep(0.2, 1, -1, -pi/4.)
+
+        twist = Twist()
+        twist.linear.x  = 0.
+        twist.angular.z = 0.
+        dance.pub.publish(twist)
+
     except rospy.ROSInterruptException:
         print "Exception"
