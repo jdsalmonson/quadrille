@@ -13,7 +13,7 @@ import rospy
 from geometry_msgs.msg import Twist
 
 from timeit import default_timer as timer
-from math import cos, pi
+from math import sin, cos, pi
 import sys
 
 sys.path.append("../ros_arduino_bridge")
@@ -27,15 +27,17 @@ class quadrille(object):
         self.t_start = -1   # time of start of entire dance
         self.t_spb   = 60./self.bpm  # seconds per beat
         self.led_dur = 0.25*self.t_spb  # time to keep LED on
+        self.led1 = 103
+        self.led2 = 104
         self.led1_on = False
-        self.led1_on = False
+        self.led2_on = False
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size = 1)
         rospy.init_node('quadrille')
 
-        speed = rospy.get_param("~speed", 0.5)
-        turn  = rospy.get_param("~turn",  1.0)
+        #speed = rospy.get_param("~speed", 0.5)
+        #turn  = rospy.get_param("~turn",  1.0)
 
-        self.led_srv = rospy.ServiceProxy('digital_write',DigitalWrite)
+        self.led_srv = rospy.ServiceProxy('/arduino/digital_write',DigitalWrite)
 
     def led_time(self, time):
         t_song    = time - self.t_start
@@ -49,31 +51,35 @@ class quadrille(object):
             if n_count == 1:
                 if self.led1_on is False:
                     self.led1_on = True
-                    self.led_srv(pin=103,value=1)
+                    self.led_srv(pin=self.led1,value=1)
                 if self.led2_on is True:
                     self.led2_on = False
-                    self.led_srv(pin=104,value=0)
+                    self.led_srv(pin=self.led2,value=0)
             else:
                 if self.led1_on is True:
                     self.led1_on = False
-                    self.led_srv(pin=103,value=0)
+                    self.led_srv(pin=self.led1,value=0)
                 if self.led2_on is False:
                     self.led2_on = True
-                    self.led_srv(pin=104,value=1)
+                    self.led_srv(pin=self.led2,value=1)
         else: # turn them both off:
             if self.led1_on is True:
                 self.led1_on = False
-                self.led_srv(pin=103,value=0)
+                self.led_srv(pin=self.led1,value=0)
             if self.led2_on is True:
                 self.led2_on = False
-                self.led_srv(pin=104,value=0)
+                self.led_srv(pin=self.led2,value=0)
+
+    def led_off(self):
+        self.led_srv(pin=self.led1,value=0)
+        self.led_srv(pin=self.led2,value=0)
 
 
     def takeStep(self, dist, n_beats, direction, theta_max):
         t_dur      = n_beats*self.t_spb
         vel_ave    = dist/t_dur # m/s
         shimmy_max = theta_max * pi / t_dur # max angular twist speed
-        rate = rospy.Rate(10)  # Hz
+        rate = rospy.Rate(20)  # Hz
         t = t0 = timer()
         # start master timer:
         if self.t_start == -1: self.t_start = t
@@ -86,11 +92,12 @@ class quadrille(object):
             shimmy = shimmy_max * sin(2.*pi*(t-t0)/t_dur)
             twist = Twist()
             twist.linear.x = vel
+            twist.angular.z = shimmy
             self.pub.publish(twist)
             print (t-t0), vel, t_dur
         twist = Twist()
         twist.linear.x = 0.
-        twist.angular.z = shimmy
+        twist.angular.z = 0.
         self.pub.publish(twist)
 
     def stepForward(self, dist = 0.5, n_beats = 2):
@@ -100,11 +107,12 @@ class quadrille(object):
 
 if __name__=="__main__":
 
-    dance = quadrille()
+    dance = quadrille(bpm = 50)
     try:
         dance.stepForward()
         dance.stepBackward()
-        dance.takeStep(0.5, 2,  1, pi/4.)
-        dance.takeStep(0.5, 2, -1, pi/4.)
+        dance.takeStep(0.5, 2,  1, 0.1 * pi/4.)
+        dance.takeStep(0.5, 2, -1, 0.1 * pi/4.)
+        dance.led_off()
     except rospy.ROSInterruptException:
         print "Exception"
