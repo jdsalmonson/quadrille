@@ -94,7 +94,7 @@ class quadrille(object):
             twist.linear.x = vel
             twist.angular.z = shimmy
             self.pub.publish(twist)
-            print (t-t0), vel, t_dur
+            #print (t-t0), vel, t_dur
         twist = Twist()
         twist.linear.x = 0.
         twist.angular.z = 0.
@@ -107,12 +107,22 @@ class quadrille(object):
 
 if __name__=="__main__":
 
-    dance = quadrille(bpm = 50)
+    # Nutcracker: Waltz of Flowers
+    dance = quadrille(bpm = 190, meter = 3)
     try:
-        dance.stepForward()
-        dance.stepBackward()
-        dance.takeStep(0.5, 2,  1, 0.1 * pi/4.)
-        dance.takeStep(0.5, 2, -1, 0.1 * pi/4.)
+        print "A"
+        dance.stepForward(0.25, 6)
+        dance.stepBackward(0.25, 6)
+        print "B"
+        dance.takeStep(0.25, 6,  1, 0.1 * pi/4.)
+        dance.takeStep(0.25, 6, -1, 0.1 * pi/4.)
+        print "C"
+        dance.stepForward(0.25, 6)
+        dance.takeStep(0.25, 6, -1, 0.1 * pi/4.)
+        print "D"
+        dance.takeStep(0.125, 6, 1, 0.2 * pi/4.)
+        dance.takeStep(0.125, 6, 1, -0.2 * pi/4.)
+
         dance.led_off()
     except rospy.ROSInterruptException:
         print "Exception"
