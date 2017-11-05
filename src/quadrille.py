@@ -18,8 +18,11 @@ from timeit import default_timer as timer
 from math import sin, cos, pi
 import sys
 
-sys.path.append("../ros_arduino_bridge")
-from ros_arduino_msgs.srv import *
+# THIS ALL IS in led_srv:
+#sys.path.append("../../ros_arduino_bridge")
+#from ros_arduino_msgs.srv import *
+
+from led_srv import LED_Srv
 
 class quadrille(object):
 
@@ -28,16 +31,23 @@ class quadrille(object):
         self.meter = meter  # numerator of key time signature. e.g. 3 in 3/4.
         self.t_start = -1   # time of start of entire dance
         self.t_spb   = 60./self.bpm  # seconds per beat
+
+        self.led_srv = LED_Srv(t_spb = t_spb, i_on_frac = 4, meter = meter)
+
+        '''  ALL OF THIS goes into LED_Srv():
         self.led_dur = 0.25*self.t_spb  # time to keep LED on
         self.led1 = 103
         self.led2 = 104
         self.led1_on = False
         self.led2_on = False
+        '''
+        
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size = 1)
         rospy.init_node('quadrille')
 
         #speed = rospy.get_param("~speed", 0.5)
         #turn  = rospy.get_param("~turn",  1.0)
+        ''' THIS ALL goes into LED_Srv():
         def dummy(pin, value):
             pass
 
@@ -46,7 +56,9 @@ class quadrille(object):
         except:
             print("Warning: No LEDs available")
             self.led_srv = dummy
+        '''
 
+    # ALL THIS GOES INTO led_srv:
     def led_time(self, time):
         t_song    = time - self.t_start
         n_beat    = int(t_song/self.t_spb) + 1 #(1st is 1)
