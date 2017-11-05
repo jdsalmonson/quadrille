@@ -29,6 +29,8 @@ class LED_Srv(object):
         self.led_dur = t_spb/i_on_frac #: [s] time to keep LED on
         #self.pubrate = 10 #: [Hz] rate of servo position publication
 
+        self.t_start = None
+        
         self.led1 = 103
         self.led2 = 104
 
@@ -75,14 +77,18 @@ class LED_Srv(object):
         '''
         
     def startLEDS(self):
-        self.t_start = rospy.get_time()
+        #self.t_start = rospy.get_time()
         # Init timer for leds:
-        self.timer = rospy.Timer(rospy.Duration(self.led_dur*ms), self.onTimer)
+        print("led_dur = ",self.led_dur," ms = ",ms)
+        self.timer = rospy.Timer(rospy.Duration(self.led_dur), self.onTimer)
         # Init timer for publication of servo position:
         #self.timerpub = rospy.Timer(rospy.Duration(1./self.pubrate), self.onTimerpub)
         
     def onTimer(self, event):
-        t_song = event.current_real.to_sec() - self.t_start
+        time = event.current_real.to_sec()
+        if not self.t_start:
+            self.t_start = time
+        t_song = time - self.t_start
 
         n_beat_1  = int(t_song/self.t_spb) # need int(round()) ? 
         n_beat    = n_beat_1 + 1 #(1st is 1)
@@ -93,8 +99,9 @@ class LED_Srv(object):
         # NEED to think about quantization:
         # n_beat = int(round(t_song/self.t_spb)) + 1 ??
         # something like this:
-        n_beat_seg = int(t_song*self.i_on_frac/self.t_spb)
-        print("n_beat_seg = ",n_beat_seg)
+        n_beat_seg = int(round(t_song*self.i_on_frac/self.t_spb))
+        print("n_beat_seg = ",n_beat_seg, "n_count = ",n_count," t_song = ",t_song," residual = ",t_song/self.t_spb % self.t_spb)
+        #print("t_song = ",t_song)
         if n_beat_seg % self.i_on_frac == 0:
             if n_count == 1:
                 self.led_srv(pin=self.led1, value=1) # turn on LED 1
@@ -154,12 +161,14 @@ class LED_Srv(object):
 
 if __name__ == "__main__":
 
-    #import time
+    import time
     
     rospy.init_node("led_node")
     led_srv= LED_Srv(0.25, 4, 3)
 
     led_srv.startLEDS()
+
+    time.sleep(1)
     '''
     sss = Servo_Srv_Sim()
     sss(0,2)
