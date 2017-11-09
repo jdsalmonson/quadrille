@@ -65,7 +65,7 @@ class LED_Srv(object):
             self.t_start = time
         t_song = time - self.t_start
 
-        n_beat_1  = int(t_song/self.t_spb) # need int(round()) ? 
+        n_beat_1  = int(round(t_song/self.t_spb)) # need int(round()) ? 
         n_beat    = n_beat_1 + 1 #(1st is 1)
         n_measure = int(n_beat/self.meter) + 1  # measure number (1st is 1)
         # count of current measure:
@@ -77,6 +77,7 @@ class LED_Srv(object):
             if n_count == 1:
                 self.led_srv(pin=self.led1, value=1) # turn on LED 1
                 if self.debug: print("LED 1: ON")
+                print("measure: {}".format(n_measure))
             else:
                 self.led_srv(pin=self.led2, value=1) # turn on LED 2
                 if self.debug: print("LED 2: ON")

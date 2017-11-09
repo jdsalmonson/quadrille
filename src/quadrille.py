@@ -35,7 +35,11 @@ class Quadrille(object):
         self.t_start = -1   # time of start of entire dance
         self.t_spb   = 60./self.bpm  # seconds per beat
 
-        self.led_srv = LED_Srv(t_spb = self.t_spb, i_on_frac = 4, meter = meter)
+        # a klooj angle muliplier because of a bug in my robot's cmd_vel:
+        self.angle_factor = rospy.get_param("quadrille_angle_fac", 0.1)
+        
+        self.led_srv = LED_Srv(t_spb = self.t_spb, i_on_frac = 2, meter = meter)
+        #self.led_srv.debug = True
         
         self.pub = rospy.Publisher('cmd_vel', Twist, queue_size = 1)
         rospy.init_node('quadrille')
@@ -46,6 +50,7 @@ class Quadrille(object):
     def takeStep(self, dist, n_beats, direction, theta_max):
         t_dur      = n_beats*self.t_spb
         vel_ave    = dist/t_dur # m/s
+        theta_max *= self.angle_factor
         shimmy_max = theta_max * pi / t_dur # max angular twist speed
         rate = rospy.Rate(20)  # Hz
         t = t0 = timer()
@@ -68,6 +73,7 @@ class Quadrille(object):
         twist.linear.x = 0.
         twist.angular.z = 0.
         self.pub.publish(twist)
+        #self.led_srv.leds_off()
 
     def stepForward(self, dist = 0.5, n_beats = 2):
         self.takeStep(dist, n_beats, 1, 0)
@@ -75,7 +81,9 @@ class Quadrille(object):
         self.takeStep(dist, n_beats, -1, 0)
 
     def done(self):
+        #rospy.sleep(1.0)
         self.led_srv.leds_off()
+        self.led_srv.timer.shutdown()
         twist = Twist()
         twist.linear.x = 0.
         twist.angular.z = 0.
@@ -85,21 +93,25 @@ if __name__=="__main__":
 
     # Nutcracker: Waltz of Flowers
     dance = Quadrille(bpm = 190, meter = 3)
+
+    print("angle_fac = ",dance.angle_factor)
+
     try:
         print("A")
         dance.stepForward(0.25, 6)
         dance.stepBackward(0.25, 6)
         print("B")
-        dance.takeStep(0.25, 6,  1, 0.1 * pi/4.)
-        dance.takeStep(0.25, 6, -1, 0.1 * pi/4.)
+        dance.takeStep(0.25, 6,  1, pi/4.)
+        dance.takeStep(0.25, 6, -1, pi/4.)
         print("C")
         dance.stepForward(0.25, 6)
-        dance.takeStep(0.25, 6, -1, 0.1 * pi/4.)
+        dance.takeStep(0.25, 6, -1, pi/4.)
         print("D")
-        dance.takeStep(0.125, 6, 1, 0.2 * pi/4.)
-        dance.takeStep(0.125, 6, 1, -0.2 * pi/4.)
+        dance.takeStep(0.125, 6, 1, 2.*pi/4.)
+        dance.takeStep(0.125, 6, 1, -2.* pi/4.)
 
+        print("DONE")
         dance.done()
-        
+
     except rospy.ROSInterruptException:
         print("Exception")
