@@ -29,7 +29,7 @@ class Quadrille(object):
 
     """
     
-    def __init__(self, bpm = 60, meter = 4):
+    def __init__(self, bpm = 60, meter = 4, stdr = False):
         self.bpm   = bpm
         self.meter = meter  # numerator of key time signature. e.g. 3 in 3/4.
         self.t_start = -1   # time of start of entire dance
@@ -40,8 +40,14 @@ class Quadrille(object):
         
         self.led_srv = LED_Srv(t_spb = self.t_spb, i_on_frac = 2, meter = meter)
         #self.led_srv.debug = True
-        
-        self.pub = rospy.Publisher('cmd_vel', Twist, queue_size = 1)
+
+        if not stdr: #: For robot
+            cmd_vel = 'cmd_vel'
+        else: #: For STDR simulation
+            print("Quadrille configured for STDR")
+            cmd_vel = 'robot0/cmd_vel'
+
+        self.pub = rospy.Publisher(cmd_vel, Twist, queue_size = 1)
         rospy.init_node('quadrille')
 
         #speed = rospy.get_param("~speed", 0.5)
@@ -92,7 +98,7 @@ class Quadrille(object):
 if __name__=="__main__":
 
     # Nutcracker: Waltz of Flowers
-    dance = Quadrille(bpm = 190, meter = 3)
+    dance = Quadrille(bpm = 190, meter = 3, stdr = True)
 
     print("angle_fac = ",dance.angle_factor)
 
@@ -109,6 +115,21 @@ if __name__=="__main__":
         print("D")
         dance.takeStep(0.125, 6, 1, 2.*pi/4.)
         dance.takeStep(0.125, 6, 1, -2.* pi/4.)
+        print("E")        
+        dance.takeStep(0.5, 6, -1, pi/4.)
+        dance.takeStep(0.5, 6, -1, -pi/4.)
+        print("F")        
+        dance.takeStep(0.125, 2, 1, pi/4.)
+        dance.takeStep(0.125, 2, 1, -pi/4.)
+        dance.takeStep(0.125, 2, 1, pi/4.)
+        dance.takeStep(0.125, 2, 1, -pi/4.)
+        dance.takeStep(0.125, 2, 1, pi/4.)
+        dance.takeStep(0.125, 2, 1, -pi/4.)
+        print("G")
+        dance.takeStep(4.*0.125, 6, 1, 8.*pi/4.)
+        dance.takeStep(4.*0.125, 6, 1, -8.* pi/4.)
+        dance.takeStep(0.0, 6, 1, 8.*pi/4.)
+        dance.takeStep(0.0, 6, 1, -8.* pi/4.)
 
         print("DONE")
         dance.done()
