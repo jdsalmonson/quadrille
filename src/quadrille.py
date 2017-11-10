@@ -98,7 +98,7 @@ class Quadrille(object):
 if __name__=="__main__":
 
     # Nutcracker: Waltz of Flowers
-    dance = Quadrille(bpm = 190, meter = 3, stdr = True)
+    dance = Quadrille(bpm = 190, meter = 3, stdr = False)
 
     print("angle_fac = ",dance.angle_factor)
 
